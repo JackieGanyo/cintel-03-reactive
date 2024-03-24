@@ -5,7 +5,8 @@ import palmerpenguins # This package provides the Palmer Penguins dataset
 import pandas as pd
 import seaborn as sns
 from shiny import App, reactive, render, req
-import ipyleaflet as ipyl 
+import ipyleaflet as ipyl
+
 
 # Palmer Penguins Dataset
 # Column names for the penguins data set include:
@@ -22,7 +23,7 @@ import ipyleaflet as ipyl
 penguins_df = palmerpenguins.load_penguins()
 
 # Name your page
-ui.page_opts(title="Palmer Penguins JGanyo", fillable=True)
+ui.page_opts(title="Palmer Penguins JGanyo", fillable=False)
 
 # Creates user sidebar user interactive 
 #and level 2 heading 'Sidebar'
@@ -59,9 +60,8 @@ with ui.sidebar(open= "open"):
     #Set horizontal rule
     ui.hr() 
 
-# create a layout to include 2 cards with a data table and data grid
-with ui.layout_columns():
-     with ui.accordion(id="acc", open="open"):
+
+with ui.accordion(id="acc", open="open"):
         with ui.accordion_panel("Data Table"):
             @render.data_frame
             def penguin_datatable():
@@ -79,18 +79,22 @@ ui.hr()
 
 with ui.navset_card_tab(id="tab"):
     with ui.nav_panel("Plotly Histogram"):
+        # Define custom colors for each category
+        custom_colors = {'Adelie': 'skyblue', 'Gentoo': 'salmon', 'Chinstrap': 'lightgreen'}
 
         # Create a function to render the Plotly histogram
         @render_plotly
         def plotly_histogram():
-            return px.histogram(penguins_df, y="species")
+            return px.histogram(penguins_df, y="species", color='species', color_discrete_map=custom_colors)
            
     with ui.nav_panel("Seaborn Histogram"):
+        # Define custom colors for each category
+        custom_palette = {'Adelie': 'skyblue', 'Gentoo': 'salmon', 'Chinstrap': 'lightgreen'}
             # Create a function to render the Seaborn histogram
-            @render.plot
-            def seaborn_histogram():
+        @render.plot
+        def seaborn_histogram():
                     sns.set_style("whitegrid") # Set Seaborn style to white
-                    seaborn_histogram = sns.histplot(penguins_df, y="species")
+                    seaborn_histogram = sns.histplot(penguins_df, y="species", hue='species', multiple='stack', palette=custom_palette)
                     
                     return seaborn_histogram
                 
@@ -121,14 +125,27 @@ penguin_islands = {
     "Dream": (-64.7333, -64.2333),
     "Torgersen": (-64.7667, -64.0833),
 }
-ui.input_select("center", "Centers", choices=list(penguin_islands.keys()))
-
+ui.input_select('center', "Centers", choices=list(penguin_islands.keys()))
 
 @render_widget
 def map():
-    return ipyl.Map(zoom=4)
-
+    return ipyl.Map(zoom=6)
 
 @reactive.effect
 def _():
     map.widget.center = penguin_islands[input.center()]
+ 
+
+
+# --------------------------------------------------------
+# Reactive calculations and effects
+# --------------------------------------------------------
+
+# Add a reactive calculation to filter the data
+# By decorating the function with @reactive, we can use the function to filter the data
+# The function will be called whenever an input functions used to generate that output changes.
+# Any output that depends on the reactive function (e.g., filtered_data()) will be updated when the data changes.
+
+@reactive.calc
+def filtered_data():
+    return penguins_df
