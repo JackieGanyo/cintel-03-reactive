@@ -68,14 +68,15 @@ with ui.sidebar(open= "open"):
     #Set horizontal rule
     ui.hr() 
 
-
-with ui.card(full_screen=True):
-        ui.card_header("Penguins Data Table")
+with ui.layout_columns():
+    with ui.card(full_screen=True):
+        "Penguins Table"
         @render.data_frame
         def render_penguins_table():
-            return filtered_data()
-with ui.card(full_screen=True):  # Full screen option
-            ui.card_header("Penguins Data Grid")
+            return render.DataTable(filtered_data())
+
+    with ui.card(full_screen=True):  # Full screen option
+            "Penguins Data Grid"
             @render.data_frame
             def render_penguins_grid():
                 return filtered_data()
@@ -89,7 +90,7 @@ with ui.layout_columns():
     
     #Plotly Histogram Card
     with ui.card(full_screen=True):
-        ui.h2("Plotly By Island Histogram")
+        "Plotly By Island Histogram"
         
          # Define custom colors for each category
         custom_colors = {'Dream': 'skyblue', 'Biscoe': 'salmon', 'Torgersen': 'lightgreen'}
@@ -101,11 +102,9 @@ with ui.layout_columns():
                                 x="species", 
                                 color="island",
                                 color_discrete_map=custom_colors)
-           
     #Seaborn Histogram Card
     with ui.card(full_screen=True):
-         ui.h2("Seaborn Histogram")
-
+         "Seaborn Histogram"
          #Create custom colors by species
          
          
@@ -114,19 +113,19 @@ with ui.layout_columns():
                     sns.set_style("whitegrid") # Set Seaborn style to white
             
                     ax = sns.histplot(
-                                                filtered_data(), 
-                                                x="island",
-                                                y="species",
-                                                multiple="stack",
+                            filtered_data(), 
+                            x="island",
+                            y="species",
+                            multiple="stack"
                                                 )
                     ax.set_title("Seaborn Palmer Penguins by Island")
-                    ax.set_xlabel("Island", rotation=90)
+                    ax.set_xlabel("Island")
                     ax.set_ylabel("Species", rotation=90)
                     return ax
-   
+             
     #Plotly Scatterplot Card
     with ui.card(full_screen=True):
-        ui.h2("Plotly Scatterplot: Species")
+        "Plotly Scatterplot: Species"        
         @render_plotly
         def ploty_scatterplot():
             
@@ -171,3 +170,6 @@ def _():
 def filtered_data():
     return penguins_df[(penguins_df["species"].isin(input.selected_species_list())) &
         (penguins_df["island"].isin(input.penguin_islands()))]
+
+
+
