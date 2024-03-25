@@ -52,6 +52,14 @@ with ui.sidebar(open= "open"):
         selected=["Adelie", "Gentoo", "Chinstrap"], 
         inline=True,)
     
+    ui.input_checkbox_group(  
+        "penguin_islands",
+        "Islands",
+        ["Torgersen", "Biscoe", "Dream"],
+        selected=["Dream"],
+        inline=True,
+    )
+    
 # Add a hyperlink to GitHub Repo
     ui.a("Ganyo GitHub",
          href="https://github.com/JackieGanyo/cintel-02-data", 
@@ -61,62 +69,75 @@ with ui.sidebar(open= "open"):
     ui.hr() 
 
 
-with ui.accordion(id="acc", open="open"):
-        with ui.accordion_panel("Data Table"):
+with ui.card(full_screen=True):
+        ui.card_header("Penguins Data Table")
+        @render.data_frame
+        def render_penguins_table():
+            return filtered_data()
+with ui.card(full_screen=True):  # Full screen option
+            ui.card_header("Penguins Data Grid")
             @render.data_frame
-            def penguin_datatable():
-                return render.DataTable(penguins_df)
-
-        with ui.accordion_panel("Data Grid"):
-            @render.data_frame
-            def penguin_datagrid():
-                return render.DataGrid(penguins_df)
+            def render_penguins_grid():
+                return filtered_data()
 
 #Set horizontal rule
 ui.hr()
 
 #Create histograms and scatterplots using Plotly and Seaborn
 
-with ui.navset_card_tab(id="tab"):
-    with ui.nav_panel("Plotly Histogram"):
-        # Define custom colors for each category
-        custom_colors = {'Adelie': 'skyblue', 'Gentoo': 'salmon', 'Chinstrap': 'lightgreen'}
+with ui.layout_columns():
+    
+    #Plotly Histogram Card
+    with ui.card(full_screen=True):
+        ui.h2("Plotly By Island Histogram")
+        
+         # Define custom colors for each category
+        custom_colors = {'Dream': 'skyblue', 'Biscoe': 'salmon', 'Torgersen': 'lightgreen'}
 
         # Create a function to render the Plotly histogram
         @render_plotly
-        def plotly_histogram():
-            return px.histogram(penguins_df, y="species", color='species', color_discrete_map=custom_colors)
+        def render_plotly_histogram():
+            return px.histogram(filtered_data(), 
+                                x="species", 
+                                color="island",
+                                color_discrete_map=custom_colors)
            
-    with ui.nav_panel("Seaborn Histogram"):
-        # Define custom colors for each category
-        custom_palette = {'Adelie': 'skyblue', 'Gentoo': 'salmon', 'Chinstrap': 'lightgreen'}
-            # Create a function to render the Seaborn histogram
-        @render.plot
-        def seaborn_histogram():
+    #Seaborn Histogram Card
+    with ui.card(full_screen=True):
+         ui.h2("Seaborn Histogram")
+
+         #Create custom colors by species
+         
+         
+         @render.plot(alt="A Seaborn Histogram with penguin species by island")
+         def plot():
                     sns.set_style("whitegrid") # Set Seaborn style to white
-                    seaborn_histogram = sns.histplot(penguins_df, y="species", hue='species', multiple='stack', palette=custom_palette)
-                    
-                    return seaborn_histogram
-                
-    with ui.nav_panel("Scatterplot"):
-        ui.card_header("Plotly Scatterplot: Species")
-                 
+            
+                    ax = sns.histplot(
+                                                filtered_data(), 
+                                                x="island",
+                                                y="species",
+                                                multiple="stack",
+                                                )
+                    ax.set_title("Seaborn Palmer Penguins by Island")
+                    ax.set_xlabel("Island", rotation=90)
+                    ax.set_ylabel("Species", rotation=90)
+                    return ax
+   
+    #Plotly Scatterplot Card
+    with ui.card(full_screen=True):
+        ui.h2("Plotly Scatterplot: Species")
         @render_plotly
         def ploty_scatterplot():
-            selected_species_list = input.selected_species_list()
-            filtered_df = penguins_df[penguins_df["species"].isin(selected_species_list)]
-            plotly_scatter = px.scatter(
-                filtered_df,
+            
+            return px.scatter(
+                filtered_data(),
                 x="body_mass_g",
-                y="bill_length_mm",
+                y="year",
                 color="species",
-                size_max=7,
-                labels={
-                    "body_mass_g": "Body Mass (g)",
-                    "bill_length_mm": "Bill Length (mm)",
-                },
-            )
-            return plotly_scatter
+                #facet_row="species", 
+                facet_col="sex",
+                labels={"body_mass_g": "Mass (g)", "year": "Year"})
 
 #Create interactive map of penguins by location
 
@@ -148,4 +169,5 @@ def _():
 
 @reactive.calc
 def filtered_data():
-    return penguins_df
+    return penguins_df[(penguins_df["species"].isin(input.selected_species_list())) &
+        (penguins_df["island"].isin(input.penguin_islands()))]
